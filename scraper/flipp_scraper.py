@@ -22,6 +22,7 @@ PRIORITY_STORES = {
     'lidl': ['lidl'],
     'harris-teeter': ['harris teeter', 'harris-teeter'],
     'safeway': ['safeway'],
+    'walmart': ['walmart'],
 }
 
 # Category mapping based on common keywords

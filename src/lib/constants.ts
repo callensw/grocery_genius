@@ -24,6 +24,12 @@ export const PRIORITY_STORES = [
     logo_url: '/stores/safeway.svg',
     website: 'https://www.safeway.com',
   },
+  {
+    name: 'Walmart',
+    slug: 'walmart',
+    logo_url: '/stores/walmart.svg',
+    website: 'https://www.walmart.com',
+  },
 ] as const
 
 // Deal categories
