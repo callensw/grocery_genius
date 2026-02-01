@@ -29,7 +29,15 @@ export function DealCard({ deal, isOnWatchList }: DealCardProps) {
   const rawData = deal.raw_data as RawData | null
   const imageUrl = rawData?.image_url
   const description = rawData?.description
-  const storeWebsite = deal.gg_stores?.website
+  const flyerId = rawData?.flyer_id
+  const itemId = rawData?.item_id
+
+  // Link to Flipp to view the actual deal
+  const dealUrl = itemId
+    ? `https://flipp.com/item/${itemId}`
+    : flyerId
+      ? `https://flipp.com/flyer/${flyerId}`
+      : deal.gg_stores?.website
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
@@ -115,15 +123,15 @@ export function DealCard({ deal, isOnWatchList }: DealCardProps) {
           )}
         </div>
 
-        {storeWebsite && (
+        {dealUrl && (
           <a
-            href={storeWebsite}
+            href={dealUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Visit Store
+            View Deal
           </a>
         )}
       </div>
