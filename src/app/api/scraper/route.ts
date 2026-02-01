@@ -150,13 +150,24 @@ export async function GET(request: NextRequest) {
 
     const deals: Record<string, unknown>[] = []
 
+    const matchedStores: string[] = []
+    const unmatchedStores: string[] = []
+
     for (const flyer of flyers) {
       const merchant = flyer.merchant || ''
       const storeSlug = matchStore(merchant)
 
-      if (!storeSlug || !storeIds[storeSlug]) {
+      if (!storeSlug) {
+        if (!unmatchedStores.includes(merchant)) unmatchedStores.push(merchant)
         continue
       }
+
+      if (!storeIds[storeSlug]) {
+        console.log(`Store ${storeSlug} matched but not in database`)
+        continue
+      }
+
+      if (!matchedStores.includes(merchant)) matchedStores.push(merchant)
 
       const flyerId = flyer.id
       const validFrom = flyer.valid_from?.split('T')[0] || null
@@ -208,12 +219,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (deals.length === 0) {
-      const availableMerchants = flyers.map((f: { merchant?: string }) => f.merchant).filter(Boolean)
       return NextResponse.json({
         message: 'No deals found from priority stores',
         count: 0,
-        availableStores: availableMerchants,
-        priorityStores: Object.keys(PRIORITY_STORES)
+        matchedStores,
+        unmatchedStores: unmatchedStores.slice(0, 20),
+        priorityStores: Object.keys(PRIORITY_STORES),
+        storeIdsInDb: Object.keys(storeIds)
       })
     }
 
