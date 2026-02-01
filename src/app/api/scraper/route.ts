@@ -169,17 +169,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No deals found', count: 0 })
     }
 
-    // Delete expired deals
-    const today = new Date().toISOString().split('T')[0]
-    await supabase.from('gg_deals').delete().lt('valid_to', today)
+    // Get unique store IDs from the deals we're about to insert
+    const storeIdsToUpdate = [...new Set(deals.map(d => d.store_id))]
+
+    // Delete existing deals for these stores
+    await supabase.from('gg_deals').delete().in('store_id', storeIdsToUpdate)
 
     // Insert deals in batches
     const batchSize = 100
     for (let i = 0; i < deals.length; i += batchSize) {
       const batch = deals.slice(i, i + batchSize)
-      await supabase.from('gg_deals').upsert(batch, {
-        onConflict: 'store_id,item_name,valid_from',
-      })
+      const { error } = await supabase.from('gg_deals').insert(batch)
+      if (error) {
+        console.error('Insert error:', error)
+        throw error
+      }
     }
 
     return NextResponse.json({
@@ -189,7 +193,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Scraper error:', error)
     return NextResponse.json(
-      { error: 'Failed to scrape deals' },
+      { error: 'Failed to scrape deals', details: String(error) },
       { status: 500 }
     )
   }
