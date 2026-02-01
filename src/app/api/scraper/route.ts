@@ -144,6 +144,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No flyers found for this zip code', count: 0, zipCode })
     }
 
+    // Log available merchants for debugging
+    const availableMerchants = flyers.map((f: { merchant?: string }) => f.merchant).filter(Boolean)
+    console.log('Available merchants:', availableMerchants)
+
     const deals: Record<string, unknown>[] = []
 
     for (const flyer of flyers) {
@@ -204,7 +208,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (deals.length === 0) {
-      return NextResponse.json({ message: 'No deals found', count: 0 })
+      const availableMerchants = flyers.map((f: { merchant?: string }) => f.merchant).filter(Boolean)
+      return NextResponse.json({
+        message: 'No deals found from priority stores',
+        count: 0,
+        availableStores: availableMerchants,
+        priorityStores: Object.keys(PRIORITY_STORES)
+      })
     }
 
     // Get unique store IDs from the deals we're about to insert
