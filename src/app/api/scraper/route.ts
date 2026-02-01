@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
 
     const matchedStores: string[] = []
     const unmatchedStores: string[] = []
-    const flyerDebug: { merchant: string; flyerId: number; itemCount: number; responseKeys?: string[] }[] = []
+    const flyerDebug: { merchant: string; flyerId: number; itemCount: number }[] = []
 
     for (const flyer of flyers) {
       const merchant = flyer.merchant || ''
@@ -183,10 +183,10 @@ export async function GET(request: NextRequest) {
       console.log(`Fetching items from ${merchant} (flyer ${flyerId})...`)
 
       let items: Record<string, unknown>[] = []
-      let rawResponse: unknown = null
       try {
-        const itemsResponse = await fetch(
-          `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`,
+        // Fetch flyer details which includes items
+        const flyerResponse = await fetch(
+          `https://backflipp.wishabi.com/flipp/flyers/${flyerId}?locale=en-us`,
           {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
@@ -194,35 +194,19 @@ export async function GET(request: NextRequest) {
             }
           }
         )
-        if (itemsResponse.ok) {
-          const itemsData = await itemsResponse.json()
-          rawResponse = itemsData
-          // Handle both array and object responses
-          if (Array.isArray(itemsData)) {
-            items = itemsData
-          } else if (itemsData.items) {
-            items = itemsData.items
-          } else {
-            // Try to find any array in the response
-            const keys = Object.keys(itemsData)
-            for (const key of keys) {
-              if (Array.isArray(itemsData[key])) {
-                items = itemsData[key]
-                break
-              }
-            }
-          }
+        if (flyerResponse.ok) {
+          const flyerData = await flyerResponse.json()
+          items = flyerData.items || []
           console.log(`Flyer ${flyerId} (${merchant}): ${items.length} items`)
         } else {
-          console.log(`Flyer ${flyerId} response not ok: ${itemsResponse.status}`)
+          console.log(`Flyer ${flyerId} response not ok: ${flyerResponse.status}`)
         }
       } catch (e) {
-        console.error(`Failed to fetch items for flyer ${flyerId}:`, e)
+        console.error(`Failed to fetch flyer ${flyerId}:`, e)
         continue
       }
 
-      const responseKeys = rawResponse && typeof rawResponse === 'object' ? Object.keys(rawResponse as object) : []
-      flyerDebug.push({ merchant, flyerId, itemCount: items.length, responseKeys })
+      flyerDebug.push({ merchant, flyerId, itemCount: items.length })
 
       for (const item of items) {
         const itemName = (String(item.name || '')).trim()
