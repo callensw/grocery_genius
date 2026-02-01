@@ -94,8 +94,17 @@ export async function GET(request: NextRequest) {
 
   const zipCode = request.nextUrl.searchParams.get('zip') || process.env.SCRAPER_ZIP_CODE || '20001'
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({
+      error: 'Missing environment variables',
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey
+    }, { status: 500 })
+  }
+
   const supabase = createClient(supabaseUrl, supabaseKey)
 
   try {
