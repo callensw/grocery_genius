@@ -126,7 +126,13 @@ export async function GET(request: NextRequest) {
 
     // Fetch flyers from Flipp
     const flyersResponse = await fetch(
-      `https://backflipp.wishabi.com/flipp/flyers?locale=en-us&postal_code=${zipCode}`
+      `https://backflipp.wishabi.com/flipp/flyers?locale=en-us&postal_code=${zipCode}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Accept': 'application/json',
+        }
+      }
     )
 
     if (!flyersResponse.ok) {
@@ -180,7 +186,13 @@ export async function GET(request: NextRequest) {
       let rawResponse: unknown = null
       try {
         const itemsResponse = await fetch(
-          `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`
+          `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`,
+          {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+              'Accept': 'application/json',
+            }
+          }
         )
         if (itemsResponse.ok) {
           const itemsData = await itemsResponse.json()
