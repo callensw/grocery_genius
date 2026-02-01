@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
 
     const matchedStores: string[] = []
     const unmatchedStores: string[] = []
-    const flyerDebug: { merchant: string; flyerId: number; itemCount: number }[] = []
+    const flyerDebug: { merchant: string; flyerId: number; itemCount: number; responseKeys?: string[] }[] = []
 
     for (const flyer of flyers) {
       const merchant = flyer.merchant || ''
@@ -177,14 +177,29 @@ export async function GET(request: NextRequest) {
       console.log(`Fetching items from ${merchant} (flyer ${flyerId})...`)
 
       let items: Record<string, unknown>[] = []
+      let rawResponse: unknown = null
       try {
         const itemsResponse = await fetch(
           `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`
         )
         if (itemsResponse.ok) {
           const itemsData = await itemsResponse.json()
+          rawResponse = itemsData
           // Handle both array and object responses
-          items = Array.isArray(itemsData) ? itemsData : (itemsData.items || [])
+          if (Array.isArray(itemsData)) {
+            items = itemsData
+          } else if (itemsData.items) {
+            items = itemsData.items
+          } else {
+            // Try to find any array in the response
+            const keys = Object.keys(itemsData)
+            for (const key of keys) {
+              if (Array.isArray(itemsData[key])) {
+                items = itemsData[key]
+                break
+              }
+            }
+          }
           console.log(`Flyer ${flyerId} (${merchant}): ${items.length} items`)
         } else {
           console.log(`Flyer ${flyerId} response not ok: ${itemsResponse.status}`)
@@ -194,7 +209,8 @@ export async function GET(request: NextRequest) {
         continue
       }
 
-      flyerDebug.push({ merchant, flyerId, itemCount: items.length })
+      const responseKeys = rawResponse && typeof rawResponse === 'object' ? Object.keys(rawResponse as object) : []
+      flyerDebug.push({ merchant, flyerId, itemCount: items.length, responseKeys })
 
       for (const item of items) {
         const itemName = (String(item.name || '')).trim()
