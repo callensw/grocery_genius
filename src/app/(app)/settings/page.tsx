@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Settings, MapPin, Store, Trash2, Check } from 'lucide-react'
+import { MapPin, Store, Trash2, Check, RefreshCw } from 'lucide-react'
 import { StoreSelector } from '@/components/StoreSelector'
 import { usePreferences } from '@/hooks/usePreferences'
 
@@ -20,6 +20,8 @@ export default function SettingsPage() {
   const [tempZip, setTempZip] = useState(zipCode)
   const [zipError, setZipError] = useState('')
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const handleSaveZip = () => {
     if (!tempZip.match(/^\d{5}$/)) {
@@ -35,6 +37,24 @@ export default function SettingsPage() {
     localStorage.clear()
     setOnboardingComplete(false)
     router.push('/')
+  }
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const response = await fetch(`/api/scraper?zip=${zipCode}`)
+      const data = await response.json()
+      if (response.ok) {
+        setSyncResult({ success: true, message: `Synced ${data.count} deals for zip code ${zipCode}` })
+      } else {
+        setSyncResult({ success: false, message: data.error || 'Failed to sync deals' })
+      }
+    } catch {
+      setSyncResult({ success: false, message: 'Failed to connect to server' })
+    } finally {
+      setSyncing(false)
+    }
   }
 
   return (
@@ -114,6 +134,32 @@ export default function SettingsPage() {
         {zipError && (
           <p className="mt-2 text-sm text-red-500">{zipError}</p>
         )}
+
+        <div className="mt-4 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                Sync Deals
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Fetch latest deals for your zip code
+              </p>
+            </div>
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync Now'}
+            </button>
+          </div>
+          {syncResult && (
+            <p className={`mt-2 text-sm ${syncResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+              {syncResult.message}
+            </p>
+          )}
+        </div>
       </section>
 
       {/* Store Selection */}
