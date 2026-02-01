@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
       flyerDebug.push({ merchant, flyerId, itemCount: items.length })
 
       for (const item of items) {
-        const itemName = (item.name || '').trim()
+        const itemName = (String(item.name || '')).trim()
         if (!itemName) continue
 
         const { priceText, priceNumeric } = parsePrice(item)
