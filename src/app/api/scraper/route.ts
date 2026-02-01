@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
 
     const matchedStores: string[] = []
     const unmatchedStores: string[] = []
+    const flyerDebug: { merchant: string; flyerId: number; itemCount: number }[] = []
 
     for (const flyer of flyers) {
       const merchant = flyer.merchant || ''
@@ -175,18 +176,25 @@ export async function GET(request: NextRequest) {
 
       console.log(`Fetching items from ${merchant} (flyer ${flyerId})...`)
 
-      let items = []
+      let items: Record<string, unknown>[] = []
       try {
         const itemsResponse = await fetch(
           `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`
         )
         if (itemsResponse.ok) {
-          items = await itemsResponse.json()
+          const itemsData = await itemsResponse.json()
+          // Handle both array and object responses
+          items = Array.isArray(itemsData) ? itemsData : (itemsData.items || [])
+          console.log(`Flyer ${flyerId} (${merchant}): ${items.length} items`)
+        } else {
+          console.log(`Flyer ${flyerId} response not ok: ${itemsResponse.status}`)
         }
       } catch (e) {
         console.error(`Failed to fetch items for flyer ${flyerId}:`, e)
         continue
       }
+
+      flyerDebug.push({ merchant, flyerId, itemCount: items.length })
 
       for (const item of items) {
         const itemName = (item.name || '').trim()
@@ -223,7 +231,7 @@ export async function GET(request: NextRequest) {
         message: 'No deals found from priority stores',
         count: 0,
         matchedStores,
-        unmatchedStores: unmatchedStores.slice(0, 20),
+        flyerDebug,
         priorityStores: Object.keys(PRIORITY_STORES),
         storeIdsInDb: Object.keys(storeIds)
       })
