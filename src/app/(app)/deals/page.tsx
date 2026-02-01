@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Tag, Search as SearchIcon, Clock, Flame, ArrowUpDown, ChevronDown } from 'lucide-react'
+import { Tag, Search as SearchIcon, Clock, Flame, ChevronDown, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { DealCard } from '@/components/DealCard'
 import { SearchBar } from '@/components/SearchBar'
@@ -25,7 +25,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 const ITEMS_PER_PAGE = 24
 
 export default function DealsPage() {
-  const { selectedStores, watchList } = usePreferences()
+  const { selectedStores, watchList, zipCode } = usePreferences()
 
   const [allDeals, setAllDeals] = useState<DealWithStore[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -35,6 +35,8 @@ export default function DealsPage() {
   const [storeFilter, setStoreFilter] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('price-low')
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -173,6 +175,27 @@ export default function DealsPage() {
 
   const showFeaturedSections = !searchQuery && !category && !storeFilter
 
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncMessage(null)
+    try {
+      const response = await fetch(`/api/scraper?zip=${zipCode}`)
+      const data = await response.json()
+      if (response.ok) {
+        setSyncMessage(`Synced ${data.count} deals`)
+        fetchDeals() // Refresh the deals list
+      } else {
+        setSyncMessage(data.error || 'Sync failed')
+      }
+    } catch {
+      setSyncMessage('Failed to connect')
+    } finally {
+      setSyncing(false)
+      // Clear message after 3 seconds
+      setTimeout(() => setSyncMessage(null), 3000)
+    }
+  }
+
   if (selectedStores.length === 0) {
     return (
       <EmptyState
@@ -190,13 +213,28 @@ export default function DealsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-          This Week&apos;s Deals
-        </h1>
-        <p className="text-neutral-500 dark:text-neutral-400">
-          {allDeals.length} deals from {selectedStores.length} store{selectedStores.length !== 1 ? 's' : ''}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+            This Week&apos;s Deals
+          </h1>
+          <p className="text-neutral-500 dark:text-neutral-400">
+            {allDeals.length} deals from {selectedStores.length} store{selectedStores.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync Deals'}
+          </button>
+          {syncMessage && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{syncMessage}</p>
+          )}
+        </div>
       </div>
 
       {/* Search */}
