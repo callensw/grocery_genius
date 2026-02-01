@@ -30,7 +30,7 @@ export default function DealsPage() {
 
     // Get store UUIDs for selected stores
     const { data: stores } = await supabase
-      .from('stores')
+      .from('gg_stores')
       .select('id, slug')
       .in('slug', selectedStores)
 
@@ -46,8 +46,8 @@ export default function DealsPage() {
     const storeIdMap = Object.fromEntries(storeData.map((s) => [s.slug, s.id]))
 
     let query = supabase
-      .from('deals')
-      .select('*, stores(*)')
+      .from('gg_deals')
+      .select('*, gg_stores(*)')
       .in('store_id', storeIds)
       .gte('valid_to', new Date().toISOString().split('T')[0])
       .order('price_numeric', { ascending: true, nullsFirst: false })

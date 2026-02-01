@@ -164,5 +164,5 @@ export type WatchListItem = Database['public']['Tables']['watch_list']['Row']
 
 // Extended types with joins
 export type DealWithStore = Deal & {
-  stores: Store | null
+  gg_stores: Store | null
 }

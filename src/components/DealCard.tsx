@@ -23,7 +23,7 @@ export function DealCard({ deal, isOnWatchList }: DealCardProps) {
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
           <Store className="h-4 w-4" />
-          <span>{deal.stores?.name || 'Unknown Store'}</span>
+          <span>{deal.gg_stores?.name || 'Unknown Store'}</span>
         </div>
         {deal.category && (
           <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">

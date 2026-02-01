@@ -5,7 +5,7 @@ export async function GET() {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('stores')
+    .from('gg_stores')
     .select('*')
     .order('name')
 

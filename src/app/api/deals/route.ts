@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
 
   // Build the query
   let query = supabase
-    .from('deals')
-    .select('*, stores(*)')
+    .from('gg_deals')
+    .select('*, gg_stores(*)')
     .gte('valid_to', new Date().toISOString().split('T')[0])
     .order('price_numeric', { ascending: true, nullsFirst: false })
     .limit(limit)
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   // Filter by store
   if (storeSlug) {
     const { data: store } = await supabase
-      .from('stores')
+      .from('gg_stores')
       .select('id')
       .eq('slug', storeSlug)
       .single()

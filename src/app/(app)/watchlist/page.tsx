@@ -32,7 +32,7 @@ export default function WatchlistPage() {
 
     // Get store UUIDs for selected stores
     const { data: stores } = await supabase
-      .from('stores')
+      .from('gg_stores')
       .select('id, slug')
       .in('slug', selectedStores)
 
@@ -50,8 +50,8 @@ export default function WatchlistPage() {
     // Fetch deals for each watchlist item
     for (const item of watchList) {
       let query = supabase
-        .from('deals')
-        .select('*, stores(*)')
+        .from('gg_deals')
+        .select('*, gg_stores(*)')
         .in('store_id', storeIds)
         .gte('valid_to', new Date().toISOString().split('T')[0])
         .ilike('item_name', `%${item.keyword}%`)

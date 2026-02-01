@@ -65,7 +65,7 @@ class FlippScraper:
 
     def _load_store_ids(self):
         """Load store UUIDs from Supabase."""
-        response = self.supabase.table('stores').select('id, slug').execute()
+        response = self.supabase.table('gg_stores').select('id, slug').execute()
         for store in response.data:
             self.store_ids[store['slug']] = store['id']
 
@@ -237,14 +237,14 @@ class FlippScraper:
 
         # Delete expired deals
         today = date.today().isoformat()
-        self.supabase.table('deals').delete().lt('valid_to', today).execute()
+        self.supabase.table('gg_deals').delete().lt('valid_to', today).execute()
         print(f"Cleaned up expired deals")
 
         # Insert new deals in batches
         batch_size = 100
         for i in range(0, len(deals), batch_size):
             batch = deals[i:i + batch_size]
-            self.supabase.table('deals').upsert(
+            self.supabase.table('gg_deals').upsert(
                 batch,
                 on_conflict='store_id,item_name,valid_from'
             ).execute()
