@@ -271,6 +271,11 @@ export async function GET(request: NextRequest) {
             merchant,
             description: item.description,
             image_url: item.cutout_image_url || item.image_url,
+            // Capture savings-related fields if available
+            original_price: item.original_price || item.was_price || null,
+            sale_story: item.sale_story || item.disclaimer || null,
+            savings: item.savings || item.discount || null,
+            percent_off: item.percent_off || item.discount_percent || null,
           },
         })
       }

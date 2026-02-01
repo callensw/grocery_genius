@@ -16,6 +16,10 @@ interface RawData {
   flyer_id?: number
   item_id?: number
   merchant?: string
+  original_price?: string | number
+  sale_story?: string
+  savings?: string | number
+  percent_off?: string | number
 }
 
 export function DealCard({ deal, isOnWatchList }: DealCardProps) {
@@ -31,6 +35,10 @@ export function DealCard({ deal, isOnWatchList }: DealCardProps) {
   const description = rawData?.description
   const flyerId = rawData?.flyer_id
   const itemId = rawData?.item_id
+  const originalPrice = rawData?.original_price
+  const saleStory = rawData?.sale_story
+  const savings = rawData?.savings
+  const percentOff = rawData?.percent_off
 
   // Link to Flipp to view the actual deal
   const dealUrl = itemId
@@ -38,6 +46,15 @@ export function DealCard({ deal, isOnWatchList }: DealCardProps) {
     : flyerId
       ? `https://flipp.com/flyer/${flyerId}`
       : deal.gg_stores?.website
+
+  // Format savings display
+  const savingsDisplay = percentOff
+    ? `${percentOff}% off`
+    : savings
+      ? typeof savings === 'number'
+        ? `Save $${savings.toFixed(2)}`
+        : `Save ${savings}`
+      : saleStory || null
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
@@ -90,15 +107,27 @@ export function DealCard({ deal, isOnWatchList }: DealCardProps) {
 
         <div className="mt-auto flex items-end justify-between pt-2">
           <div>
-            {deal.price ? (
-              <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                {deal.price}
+            <div className="flex items-baseline gap-2">
+              {deal.price ? (
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {deal.price}
+                </p>
+              ) : deal.price_numeric ? (
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                  ${deal.price_numeric.toFixed(2)}
+                </p>
+              ) : null}
+              {originalPrice && (
+                <p className="text-sm text-neutral-400 line-through dark:text-neutral-500">
+                  ${typeof originalPrice === 'number' ? originalPrice.toFixed(2) : originalPrice}
+                </p>
+              )}
+            </div>
+            {savingsDisplay && (
+              <p className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                {savingsDisplay}
               </p>
-            ) : deal.price_numeric ? (
-              <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                ${deal.price_numeric.toFixed(2)}
-              </p>
-            ) : null}
+            )}
             {deal.unit_price && (
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {deal.unit_price}
