@@ -133,9 +133,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch flyers from Flipp', status: flyersResponse.status }, { status: 500 })
     }
 
-    const flyers = await flyersResponse.json()
+    const flyersData = await flyersResponse.json()
+
+    // Flipp API returns { flyers: [...] } or just an array depending on endpoint
+    const flyers = Array.isArray(flyersData) ? flyersData : (flyersData.flyers || [])
 
     console.log(`Found ${flyers.length} flyers for zip code ${zipCode}`)
+
+    if (!Array.isArray(flyers) || flyers.length === 0) {
+      return NextResponse.json({ message: 'No flyers found for this zip code', count: 0, zipCode })
+    }
 
     const deals: Record<string, unknown>[] = []
 
