@@ -100,16 +100,30 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get store IDs from database
-    const { data: stores } = await supabase.from('gg_stores').select('id, slug')
+    const { data: stores, error: storesError } = await supabase.from('gg_stores').select('id, slug')
+
+    if (storesError) {
+      return NextResponse.json({ error: 'Failed to fetch stores', details: storesError.message }, { status: 500 })
+    }
+
     const storeIds: Record<string, string> = {}
     for (const store of stores || []) {
       storeIds[store.slug] = store.id
+    }
+
+    if (Object.keys(storeIds).length === 0) {
+      return NextResponse.json({ error: 'No stores found in database' }, { status: 500 })
     }
 
     // Fetch flyers from Flipp
     const flyersResponse = await fetch(
       `https://backflipp.wishabi.com/flipp/flyers?locale=en-us&postal_code=${zipCode}`
     )
+
+    if (!flyersResponse.ok) {
+      return NextResponse.json({ error: 'Failed to fetch flyers from Flipp', status: flyersResponse.status }, { status: 500 })
+    }
+
     const flyers = await flyersResponse.json()
 
     console.log(`Found ${flyers.length} flyers for zip code ${zipCode}`)
@@ -130,10 +144,18 @@ export async function GET(request: NextRequest) {
 
       console.log(`Fetching items from ${merchant} (flyer ${flyerId})...`)
 
-      const itemsResponse = await fetch(
-        `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`
-      )
-      const items = await itemsResponse.json()
+      let items = []
+      try {
+        const itemsResponse = await fetch(
+          `https://backflipp.wishabi.com/flipp/flyers/${flyerId}/items?locale=en-us`
+        )
+        if (itemsResponse.ok) {
+          items = await itemsResponse.json()
+        }
+      } catch (e) {
+        console.error(`Failed to fetch items for flyer ${flyerId}:`, e)
+        continue
+      }
 
       for (const item of items) {
         const itemName = (item.name || '').trim()
@@ -170,10 +192,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unique store IDs from the deals we're about to insert
-    const storeIdsToUpdate = [...new Set(deals.map(d => d.store_id))]
+    const storeIdsToUpdate = [...new Set(deals.map(d => d.store_id))] as string[]
 
     // Delete existing deals for these stores
-    await supabase.from('gg_deals').delete().in('store_id', storeIdsToUpdate)
+    const { error: deleteError } = await supabase.from('gg_deals').delete().in('store_id', storeIdsToUpdate)
+    if (deleteError) {
+      return NextResponse.json({ error: 'Failed to delete old deals', details: deleteError.message }, { status: 500 })
+    }
 
     // Insert deals in batches
     const batchSize = 100
